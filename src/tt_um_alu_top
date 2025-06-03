@@ -1,46 +1,39 @@
-module tt_um_alu_top ( 
-    input  [7:0] sw,      // Entrada A: sw[7:0]
-    input  [4:0] sw2,     // Entrada B: sw[12:8]
-    input  [2:0] sel,     // Selección de operación: sw[15:13]
-    input        btnC,    // Cin para el sumador
-    input        clk,     // Reloj
-    output [7:0] led,     // LEDs para mostrar resultado suma
-    output       led8,    // LED para mostrar carry out
-    output [6:0] seg,     // Display 7 segmentos
-    output [3:0] an       // Ánodos del display
+module tt_um_alu_top (
+    input  [7:0] ui_in,      // A[7:0]
+    output [7:0] uo_out,     // SUM[7:0]
+    inout  [7:0] uio_inout,  // B[4:0] + sel[2:0]
+    input        clk         // Reloj
 );
 
-wire [7:0] int_Suma;
-wire       int_Cout;
+// Entradas separadas
+wire [7:0] A   = ui_in;
+wire [4:0] B   = uio_inout[4:0];
+wire [2:0] sel = uio_inout[7:5];
+
+// Resultado
+wire [7:0] SUM;
 wire [7:0] R;
 
-// Instancia del nuevo sumador con full adders
-RippleCarryAdder8 sumador_inst (
-    .A    (sw),
-    .B    ({3'b000, sw2}), // Extensión a 8 bits
-    .Cin  (btnC),
-    .SUM  (int_Suma),
-    .Cout (int_Cout)
+// Sumador
+RippleCarryAdder8 sumador (
+    .A    (A),
+    .B    ({3'b000, B}),  // Extiende a 8 bits
+    .Cin  (1'b0),         // Si quieres usar Cin real, debes usar otro bit
+    .SUM  (SUM),
+    .Cout ()              // No usado
 );
 
-// Instancia de la ALU (usando la misma entrada)
-ALU alu_inst (
-    .A    (sw),
-    .B    ({3'b000, sw2}), // Extensión a 8 bits
-    .sel  (sel),
-    .R    (R)
+// ALU
+ALU alu (
+    .A   (A),
+    .B   ({3'b000, B}),
+    .sel (sel),
+    .R   (R)
 );
 
-// Display 7 segmentos
-DisplayController display (
-    .clk   (clk),
-    .value (R),
-    .seg   (seg),
-    .an    (an)
-);
-
-// LEDs
-assign led  = int_Suma;
-assign led8 = int_Cout;
+// Salida
+assign uo_out = SUM;
 
 endmodule
+
+
